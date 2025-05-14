@@ -1,43 +1,63 @@
 import {
   GraphQLObjectType,
   GraphQLString,
-  GraphQLSchema
-} from 'graphql';
-import { IUser } from '../types/User';
-import { createUser } from './resolvers';
+  GraphQLSchema,
+  GraphQLEnumType,
+  GraphQLNonNull
+} from "graphql";
+import { createUser } from "./resolvers";
 
 const UserType = new GraphQLObjectType({
-  name: 'User',
+  name: "User",
   fields: () => ({
-    id:       { type: GraphQLString },
+    id: { type: GraphQLString },
     username: { type: GraphQLString },
-    email:    { type: GraphQLString }
+    role: { type: GraphQLString },
+    name: { type: GraphQLString },
+    universityId: { type: GraphQLString }
+    // password is omitted from public output
   })
 });
 
-const RootQuery = new GraphQLObjectType({
-  name: 'RootQueryType',
-  fields: {
-    hello: {
-      type: GraphQLString,
-      resolve: () => 'Hello from TypeScript GraphQL backend!'
-    }
+const RoleEnum = new GraphQLEnumType({
+  name: "Role",
+  values: {
+    student: { value: "student" },
+    admin: { value: "admin" }
   }
 });
 
 const Mutation = new GraphQLObjectType({
-  name: 'Mutation',
+  name: "Mutation",
   fields: {
     signup: {
       type: UserType,
       args: {
-        username: { type: GraphQLString },
-        email:    { type: GraphQLString },
-        password: { type: GraphQLString }
+        username: { type: new GraphQLNonNull(GraphQLString) },
+        password: { type: new GraphQLNonNull(GraphQLString) },
+        role: { type: RoleEnum },
+        name: { type: new GraphQLNonNull(GraphQLString) },
+        universityId: { type: new GraphQLNonNull(GraphQLString) }
       },
-      resolve: async (_, { username, email, password }) => {
-        return await createUser({ username, email, password });
+      resolve: async (_, { username, password, role, name, universityId }) => {
+        return await createUser({
+          username,
+          password,
+          role,
+          name,
+          universityId
+        });
       }
+    }
+  }
+});
+
+const RootQuery = new GraphQLObjectType({
+  name: "RootQueryType",
+  fields: {
+    hello: {
+      type: GraphQLString,
+      resolve: () => "GraphQL API working!"
     }
   }
 });
