@@ -6,6 +6,7 @@ import {
   GraphQLNonNull
 } from "graphql";
 import { createUser } from "./resolvers";
+import { loginUser } from "./resolvers";
 
 const UserType = new GraphQLObjectType({
   name: "User",
@@ -16,6 +17,14 @@ const UserType = new GraphQLObjectType({
     name: { type: GraphQLString },
     universityId: { type: GraphQLString }
     // password is omitted from public output
+  })
+});
+
+const LoginResponseType = new GraphQLObjectType({
+  name: "LoginResponse",
+  fields: () => ({
+    token: { type: GraphQLString },
+    role: { type: GraphQLString }
   })
 });
 
@@ -47,6 +56,16 @@ const Mutation = new GraphQLObjectType({
           name,
           universityId
         });
+      }
+    },
+    login: {
+      type: LoginResponseType,
+      args: {
+        username: { type: new GraphQLNonNull(GraphQLString) },
+        password: { type: new GraphQLNonNull(GraphQLString) }
+      },
+      resolve: async (_: any, { username, password }) => {
+        return await loginUser(username, password);
       }
     }
   }
