@@ -3,10 +3,12 @@ import {
   GraphQLString,
   GraphQLSchema,
   GraphQLEnumType,
-  GraphQLNonNull
+  GraphQLNonNull,
+  GraphQLList
 } from "graphql";
-import { createUser } from "./resolvers";
+import { createProject, createUser, getUserProjects } from "./resolvers";
 import { loginUser } from "./resolvers";
+import { Project } from "../models/Project";
 
 const UserType = new GraphQLObjectType({
   name: "User",
@@ -34,6 +36,21 @@ const RoleEnum = new GraphQLEnumType({
     student: { value: "student" },
     admin: { value: "admin" }
   }
+});
+
+const ProjectType = new GraphQLObjectType({
+  name: "Project",
+  fields: () => ({
+    id: { type: GraphQLString },
+    title: { type: GraphQLString },
+    description: { type: GraphQLString },
+    category: { type: GraphQLString },
+    status: { type: GraphQLString },
+    startDate: { type: GraphQLString },
+    endDate: { type: GraphQLString },
+    selectedStudents: { type: new GraphQLList(GraphQLString) },
+    createdAt: { type: GraphQLString }
+  })
 });
 
 const Mutation = new GraphQLObjectType({
@@ -67,6 +84,25 @@ const Mutation = new GraphQLObjectType({
       resolve: async (_: any, { username, password }) => {
         return await loginUser(username, password);
       }
+    },
+    createProject: {
+      type: ProjectType,
+      args: {
+        title: { type: new GraphQLNonNull(GraphQLString) },
+        description: { type: GraphQLString },
+        category: { type: GraphQLString },
+        status: { type: GraphQLString },
+        startDate: { type: GraphQLString },
+        endDate: { type: GraphQLString },
+        selectedStudents: { type: new GraphQLList(GraphQLString) }
+      },
+      resolve: async (_: any, args, context) => {
+        const user = context.user;
+        if (!user || user.role !== "admin") throw new Error("Unauthorized");
+
+        const project = new Project(args);
+        return await project.save();
+      }
     }
   }
 });
@@ -77,6 +113,22 @@ const RootQuery = new GraphQLObjectType({
     hello: {
       type: GraphQLString,
       resolve: () => "GraphQL API working!"
+    },
+    allProjects: {
+      type: new GraphQLList(ProjectType),
+      resolve: async (_: any, __, context) => {
+        const user = context.user;
+        if (!user || user.role !== "admin") throw new Error("Unauthorized");
+        return await Project.find();
+      }
+    },
+    myProjects: {
+      type: new GraphQLList(ProjectType),
+      resolve: async (_: any, __, context) => {
+        const user = context.user;
+        if (!user || user.role !== "student") throw new Error("Unauthorized");
+        return await Project.find({ selectedStudents: user.id });
+      }
     }
   }
 });
