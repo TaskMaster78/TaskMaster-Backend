@@ -11,6 +11,7 @@ import { loginUser } from "./resolvers";
 import { Project } from "../models/Project";
 import { User } from "../models/User";
 import { Task } from "../models/Task";
+import mongoose from "mongoose";
 
 const UserType = new GraphQLObjectType({
   name: "User",
@@ -120,6 +121,59 @@ const Mutation = new GraphQLObjectType({
 
         const project = new Project(args);
         return await project.save();
+      }
+    },
+    createTask: {
+      type: TaskType,
+      args: {
+        projectId: { type: new GraphQLNonNull(GraphQLString) },
+        projectTitle: { type: new GraphQLNonNull(GraphQLString) },
+        taskName: { type: new GraphQLNonNull(GraphQLString) },
+        description: { type: GraphQLString },
+        assignedStudent: { type: new GraphQLNonNull(GraphQLString) },
+        status: { type: GraphQLString },
+        dueDate: { type: GraphQLString }
+      },
+      resolve: async (_, args, context) => {
+        if (!context.user) throw new Error("Unauthorized");
+
+        const task = new Task({
+          ...args,
+          projectId: new mongoose.Types.ObjectId(args.projectId),
+          assignedStudent: new mongoose.Types.ObjectId(args.assignedStudent)
+        });
+
+        return await task.save();
+      }
+    },
+    updateTask: {
+      type: TaskType,
+      args: {
+        id: { type: new GraphQLNonNull(GraphQLString) },
+        projectId: { type: GraphQLString },
+        projectTitle: { type: GraphQLString },
+        taskName: { type: GraphQLString },
+        description: { type: GraphQLString },
+        assignedStudent: { type: GraphQLString },
+        status: { type: GraphQLString },
+        dueDate: { type: GraphQLString }
+      },
+      resolve: async (_, args, context) => {
+        if (!context.user) throw new Error("Unauthorized");
+
+        const updateData = {
+          ...args,
+          ...(args.projectId && {
+            projectId: new mongoose.Types.ObjectId(args.projectId)
+          }),
+          ...(args.assignedStudent && {
+            assignedStudent: new mongoose.Types.ObjectId(args.assignedStudent)
+          })
+        };
+
+        delete updateData.id; // remove id from update fields
+
+        return await Task.findByIdAndUpdate(args.id, updateData, { new: true });
       }
     }
   }
