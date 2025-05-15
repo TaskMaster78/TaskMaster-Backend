@@ -3,6 +3,17 @@ import bcrypt from "bcrypt";
 import { IUser } from "../types/User";
 import { User } from "../models/User";
 import { Project } from "../models/Project";
+import mongoose from "mongoose";
+
+type CreateProjectArgs = {
+  title: string;
+  description?: string;
+  category?: string;
+  status?: string;
+  startDate?: string;
+  endDate?: string;
+  selectedStudents: string[];
+};
 
 export const createUser = async (args: IUser) => {
   const hashedPassword = await bcrypt.hash(args.password, 10);
@@ -33,17 +44,25 @@ export const loginUser = async (
   return { token, role: user.role };
 };
 
-export const createProject = async (
-  title: string,
-  description: string,
-  assignedTo: string,
-  currentUser: IUser
+const createProject = async (
+  _: any,
+  args: CreateProjectArgs,
+  context: { user: { id: string; role: string } }
 ) => {
-  if (currentUser.role !== "admin") throw new Error("Unauthorized");
-  const project = new Project({ title, description, assignedTo });
+  const user = context.user;
+  if (!user || user.role !== "admin") throw new Error("Unauthorized");
+
+  const selectedStudents = args.selectedStudents.map(
+    (id) => new mongoose.Types.ObjectId(id)
+  );
+
+  const project = new Project({
+    ...args,
+    selectedStudents // override with converted ObjectIds
+  });
+
   return await project.save();
 };
-
 export const getUserProjects = async (currentUser: IUser) => {
   if (currentUser.role === "admin") {
     return await Project.find();

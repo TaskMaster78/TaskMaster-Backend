@@ -6,9 +6,10 @@ import {
   GraphQLNonNull,
   GraphQLList
 } from "graphql";
-import { createProject, createUser, getUserProjects } from "./resolvers";
+import { createUser } from "./resolvers";
 import { loginUser } from "./resolvers";
 import { Project } from "../models/Project";
+import { User } from "../models/User";
 
 const UserType = new GraphQLObjectType({
   name: "User",
@@ -113,6 +114,12 @@ const RootQuery = new GraphQLObjectType({
     hello: {
       type: GraphQLString,
       resolve: () => "GraphQL API working!"
+    },
+    students: {
+      type: new GraphQLList(UserType),
+      resolve: async () => {
+        return await User.find({ role: "student" });
+      }
     },
     allProjects: {
       type: new GraphQLList(ProjectType),
