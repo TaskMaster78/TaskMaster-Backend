@@ -10,6 +10,7 @@ import { createUser } from "./resolvers";
 import { loginUser } from "./resolvers";
 import { Project } from "../models/Project";
 import { User } from "../models/User";
+import { Task } from "../models/Task";
 
 const UserType = new GraphQLObjectType({
   name: "User",
@@ -51,6 +52,22 @@ const ProjectType = new GraphQLObjectType({
     endDate: { type: GraphQLString },
     selectedStudents: { type: new GraphQLList(GraphQLString) },
     createdAt: { type: GraphQLString }
+  })
+});
+
+const TaskType = new GraphQLObjectType({
+  name: "Task",
+  fields: () => ({
+    id: { type: GraphQLString },
+    projectId: { type: GraphQLString },
+    projectTitle: { type: GraphQLString },
+    taskName: { type: GraphQLString },
+    description: { type: GraphQLString },
+    assignedStudent: { type: GraphQLString },
+    status: { type: GraphQLString },
+    dueDate: { type: GraphQLString },
+    createdAt: { type: GraphQLString },
+    updatedAt: { type: GraphQLString }
   })
 });
 
@@ -135,6 +152,13 @@ const RootQuery = new GraphQLObjectType({
         const user = context.user;
         if (!user || user.role !== "student") throw new Error("Unauthorized");
         return await Project.find({ selectedStudents: user.id });
+      }
+    },
+    tasks: {
+      type: new GraphQLList(TaskType),
+      resolve: async (_, __, context) => {
+        if (!context.user) throw new Error("Unauthorized");
+        return await Task.find();
       }
     }
   }
