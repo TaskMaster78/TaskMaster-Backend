@@ -72,6 +72,33 @@ const TaskType = new GraphQLObjectType({
   })
 });
 
+const StudentType = new GraphQLObjectType({
+  name: "Student",
+  fields: () => ({
+    id: { type: GraphQLString },
+    name: { type: GraphQLString }
+  })
+});
+
+const TaskByIdType = new GraphQLObjectType({
+  name: "TaskById",
+  fields: () => ({
+    id: { type: GraphQLString },
+    taskName: { type: GraphQLString },
+    description: { type: GraphQLString },
+    assignedStudent: { type: GraphQLString },
+    assignedStudentDetails: {
+      type: new GraphQLList(StudentType),
+      resolve: async (parent) => {
+        const student = await User.find({ _id: parent.assignedStudent }); // Assuming assignedStudent is an ID
+        return student;
+      }
+    },
+    status: { type: GraphQLString },
+    dueDate: { type: GraphQLString }
+  })
+});
+
 const Mutation = new GraphQLObjectType({
   name: "Mutation",
   fields: {
@@ -213,6 +240,16 @@ const RootQuery = new GraphQLObjectType({
       resolve: async (_, __, context) => {
         if (!context.user) throw new Error("Unauthorized");
         return await Task.find();
+      }
+    },
+    tasksByProject: {
+      type: new GraphQLList(TaskByIdType),
+      args: {
+        projectId: { type: new GraphQLNonNull(GraphQLString) }
+      },
+      resolve: async (_, { projectId }, context) => {
+        if (!context.user) throw new Error("Unauthorized");
+        return await Task.find({ projectId });
       }
     }
   }
