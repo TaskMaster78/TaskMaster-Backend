@@ -251,6 +251,13 @@ const RootQuery = new GraphQLObjectType({
         if (!context.user) throw new Error("Unauthorized");
         return await Task.find({ projectId });
       }
+    },
+    otherUsers: {
+      type: new GraphQLList(UserType),
+      resolve: async (_: any, __: any, context) => {
+        if (!context.user) throw new Error("Unauthorized");
+        return await User.find({ _id: { $ne: context.user.id } });
+      }
     }
   }
 });
