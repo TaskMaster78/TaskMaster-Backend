@@ -4,7 +4,8 @@ import {
   GraphQLSchema,
   GraphQLEnumType,
   GraphQLNonNull,
-  GraphQLList
+  GraphQLList,
+  GraphQLInt
 } from "graphql";
 import { createUser } from "./resolvers";
 import { loginUser } from "./resolvers";
@@ -257,6 +258,33 @@ const RootQuery = new GraphQLObjectType({
       resolve: async (_: any, __: any, context) => {
         if (!context.user) throw new Error("Unauthorized");
         return await User.find({ _id: { $ne: context.user.id } });
+      }
+    },
+    dashboardStats: {
+      type: new GraphQLObjectType({
+        name: "DashboardStats",
+        fields: () => ({
+          totalProjects: { type: GraphQLInt },
+          totalStudents: { type: GraphQLInt },
+          totalTasks: { type: GraphQLInt },
+          finishedProjects: { type: GraphQLInt }
+        })
+      }),
+      resolve: async () => {
+        const [totalProjects, totalStudents, totalTasks, finishedProjects] =
+          await Promise.all([
+            Project.countDocuments(),
+            User.countDocuments({ role: "student" }),
+            Task.countDocuments(),
+            Project.countDocuments({ status: "finished" })
+          ]);
+
+        return {
+          totalProjects,
+          totalStudents,
+          totalTasks,
+          finishedProjects
+        };
       }
     }
   }
