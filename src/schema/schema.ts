@@ -239,8 +239,16 @@ const RootQuery = new GraphQLObjectType({
     tasks: {
       type: new GraphQLList(TaskType),
       resolve: async (_, __, context) => {
-        if (!context.user) throw new Error("Unauthorized");
-        return await Task.find();
+        const user = context.user;
+        if (!user) throw new Error("Unauthorized");
+
+        if (user.role === "admin") {
+          return await Task.find();
+        } else if (user.role === "student") {
+          return await Task.find({ assignedStudent: user.id });
+        } else {
+          throw new Error("Invalid role");
+        }
       }
     },
     tasksByProject: {
@@ -285,6 +293,15 @@ const RootQuery = new GraphQLObjectType({
           totalTasks,
           finishedProjects
         };
+      }
+    },
+    me: {
+      type: UserType,
+      resolve: async (_: any, __: any, context) => {
+        if (!context.user) throw new Error("Unauthorized");
+
+        const user = await User.findById(context.user.id);
+        return user;
       }
     }
   }

@@ -38,9 +38,10 @@ app.get("/", (_req, res) => {
 });
 
 // JWT Auth middleware for GraphQL
+// JWT Auth middleware for GraphQL
 app.use(
   "/graphql",
-  graphqlHTTP((req, res) => {
+  graphqlHTTP(async (req, res) => {
     const token = req.headers.authorization?.split(" ")[1];
     let user = null;
 
@@ -56,13 +57,14 @@ app.use(
           token,
           process.env.JWT_SECRET as string
         ) as JwtPayload;
+
         user = {
           id: decoded.id,
           role: decoded.role,
           username: decoded.username
         };
-      } catch {
-        console.warn("⚠️ Invalid token");
+      } catch (err) {
+        console.warn("⚠️ Invalid token:", err);
       }
     }
 
