@@ -203,6 +203,27 @@ const Mutation = new GraphQLObjectType({
 
         return await Task.findByIdAndUpdate(args.id, updateData, { new: true });
       }
+    },
+    updateUser: {
+      type: UserType,
+      args: {
+        name: { type: GraphQLString },
+        phone: { type: GraphQLString },
+        department: { type: GraphQLString },
+        bio: { type: GraphQLString }
+      },
+      resolve: async (_, args, context) => {
+        const user = context.user;
+        if (!user) throw new Error("Unauthorized");
+
+        const updatedUser = await User.findByIdAndUpdate(
+          user.id,
+          { ...args },
+          { new: true }
+        );
+        console.log("Updating user with ID:", user.id, "with data:", args);
+        return updatedUser;
+      }
     }
   }
 });
