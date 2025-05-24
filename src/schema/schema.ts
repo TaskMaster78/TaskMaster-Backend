@@ -199,7 +199,7 @@ const Mutation = new GraphQLObjectType({
           })
         };
 
-        delete updateData.id; // remove id from update fields
+        delete updateData.projectId; // remove id from update fields
 
         return await Task.findByIdAndUpdate(args.id, updateData, { new: true });
       }
