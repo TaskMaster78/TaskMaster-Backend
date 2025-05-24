@@ -37,11 +37,9 @@ app.get("/", (_req, res) => {
   res.send("✅ GraphQL backend is up and running!");
 });
 
-// JWT Auth middleware for GraphQL
-// JWT Auth middleware for GraphQL
 app.use(
   "/graphql",
-  graphqlHTTP(async (req, res) => {
+  (req, res) => {
     const token = req.headers.authorization?.split(" ")[1];
     let user = null;
 
@@ -53,11 +51,7 @@ app.use(
 
     if (token) {
       try {
-        const decoded = verify(
-          token,
-          process.env.JWT_SECRET as string
-        ) as JwtPayload;
-
+        const decoded = verify(token, process.env.JWT_SECRET as string) as JwtPayload;
         user = {
           id: decoded.id,
           role: decoded.role,
@@ -68,12 +62,12 @@ app.use(
       }
     }
 
-    return {
+    graphqlHTTP({
       schema,
       graphiql: true,
       context: { user }
-    };
-  })
+    })(req, res);
+  }
 );
 
 // Socket.IO logic
